@@ -1,0 +1,1373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wolf Golf Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #2d5a27;
+    --green-light: #3d7a34;
+    --green-pale: #e8f5e3;
+    --gold: #c9a84c;
+    --gold-light: #f0d080;
+    --cream: #faf7f0;
+    --brown: #4a3728;
+    --text: #1a1a1a;
+    --muted: #7a7a7a;
+    --white: #ffffff;
+    --shadow: 0 4px 24px rgba(0,0,0,0.12);
+    --radius: 14px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse at 20% 10%, rgba(45,90,39,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 90%, rgba(201,168,76,0.08) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; padding: 0 0 80px; }
+
+  .header {
+    background: var(--green);
+    color: white;
+    padding: 28px 24px 22px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0; right: 0;
+    height: 24px;
+    background: var(--cream);
+    clip-path: ellipse(55% 100% at 50% 100%);
+  }
+  .header-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 42px;
+    letter-spacing: 3px;
+    color: var(--gold-light);
+    line-height: 1;
+  }
+  .header-sub {
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.6);
+    margin-top: 4px;
+  }
+  .header-actions {
+    position: absolute;
+    right: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+  }
+  .btn-icon {
+    background: rgba(255,255,255,0.15);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 18px;
+    transition: background 0.2s;
+  }
+  .btn-icon:hover { background: rgba(255,255,255,0.25); }
+
+  .page { display: none; padding: 24px; }
+  .page.active { display: block; }
+
+  .setup-card {
+    background: white;
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: var(--shadow);
+    margin-bottom: 16px;
+  }
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: 16px;
+  }
+
+  .player-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .player-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--green);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  input[type="text"], input[type="number"], select {
+    flex: 1;
+    padding: 11px 14px;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    color: var(--text);
+    background: white;
+    transition: border-color 0.2s;
+    outline: none;
+    width: 100%;
+  }
+  input:focus, select:focus { border-color: var(--green); }
+
+  .amount-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .dollar-prefix {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--green);
+  }
+  .amount-row input { max-width: 120px; }
+
+  .btn {
+    display: block;
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .btn-primary {
+    background: var(--green);
+    color: white;
+    letter-spacing: 0.5px;
+  }
+  .btn-primary:hover { background: var(--green-light); transform: translateY(-1px); box-shadow: 0 6px 20px rgba(45,90,39,0.3); }
+  .btn-secondary {
+    background: var(--green-pale);
+    color: var(--green);
+  }
+  .btn-gold {
+    background: var(--gold);
+    color: white;
+  }
+  .btn-gold:hover { background: var(--gold-light); color: var(--brown); }
+
+  .hole-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .hole-indicator {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    color: var(--green);
+    letter-spacing: 2px;
+    line-height: 1;
+  }
+  .hole-indicator span {
+    font-size: 14px;
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 400;
+    letter-spacing: 0;
+    display: block;
+    text-align: center;
+  }
+  .nav-btn {
+    background: white;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--green);
+  }
+  .nav-btn:hover { background: var(--green-pale); border-color: var(--green); }
+  .nav-btn:disabled { opacity: 0.3; cursor: default; }
+
+  .team-section { margin-bottom: 16px; }
+  .team-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+  }
+  .player-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .chip {
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 1.5px solid #e0e0e0;
+    background: white;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--text);
+    user-select: none;
+  }
+  .chip.wolf { background: var(--green); color: white; border-color: var(--green); }
+  .chip.team { background: var(--green-pale); color: var(--green); border-color: var(--green); }
+  .chip.lone { background: #fff3e0; color: #e65100; border-color: #e65100; }
+  .chip.ghost { background: #f3e5f5; color: #7b1fa2; border-color: #9c27b0; }
+  .chip.greenie-winner { background: var(--gold); border-color: var(--gold); color: white; font-weight: 700; }
+  .par3-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:8px; margin-top:10px; }
+  .par3-btn { aspect-ratio:1; border-radius:10px; border:2px solid #ddd; background:white; font-weight:700; font-size:14px; cursor:pointer; color:var(--muted); transition:all 0.15s; }
+  .par3-btn.selected { background:var(--green); border-color:var(--green); color:white; }
+  .greenie-section { background:linear-gradient(135deg,#fffde7,#fff8e1); border:2px solid var(--gold); border-radius:var(--radius); padding:14px; margin-bottom:16px; }
+  .greenie-label { font-size:13px; font-weight:700; color:#8b6914; margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+  .ghost-badge { display:inline-flex;align-items:center;gap:6px;background:#f3e5f5;border:1.5px solid #9c27b0;border-radius:10px;padding:8px 14px;font-size:13px;font-weight:600;color:#6a1b9a;margin-bottom:8px; }
+
+  .wolf-select-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    background: #f5f5f5;
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .wolf-icon { font-size: 22px; }
+  .wolf-select-label { font-size: 13px; color: var(--muted); font-weight: 500; }
+  .wolf-name { font-weight: 600; color: var(--green); font-size: 15px; }
+
+  .money-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #fffbf0;
+    border: 1.5px solid var(--gold);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 16px;
+  }
+  .money-icon { font-size: 22px; }
+  .money-label { font-size: 13px; color: var(--muted); font-weight: 500; flex: 1; }
+  .money-input-wrap { display: flex; align-items: center; gap: 4px; }
+  .money-input-wrap span { font-weight: 600; color: var(--gold); font-size: 18px; }
+  .money-input-wrap input { max-width: 90px; border-color: var(--gold); }
+  .money-input-wrap input:focus { border-color: var(--brown); }
+
+  .winner-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .winner-btn {
+    flex: 1;
+    padding: 11px;
+    border-radius: 10px;
+    border: 1.5px solid #e0e0e0;
+    background: white;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: var(--muted);
+  }
+  .winner-btn.wolf-wins { background: var(--green); color: white; border-color: var(--green); }
+  .winner-btn.team-wins { background: #1565c0; color: white; border-color: #1565c0; }
+  .winner-btn.push { background: #607d8b; color: white; border-color: #607d8b; }
+
+  .hole-dots {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+  .hole-dot {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 1.5px solid #ddd;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .hole-dot.current { border-color: var(--green); color: var(--green); box-shadow: 0 0 0 3px rgba(45,90,39,0.15); }
+  .hole-dot.wolf-won { background: var(--green); border-color: var(--green); color: white; }
+  .hole-dot.team-won { background: #1565c0; border-color: #1565c0; color: white; }
+  .hole-dot.pushed { background: #607d8b; border-color: #607d8b; color: white; }
+
+  .score-table {
+    background: white;
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+  }
+  .score-header {
+    background: var(--green);
+    color: white;
+    display: grid;
+    padding: 12px 16px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .score-row {
+    display: grid;
+    padding: 14px 16px;
+    border-bottom: 1px solid #f0f0f0;
+    align-items: center;
+    transition: background 0.15s;
+  }
+  .score-row:last-child { border-bottom: none; }
+  .score-row:hover { background: var(--green-pale); }
+  .player-rank { font-size: 12px; color: var(--muted); font-weight: 500; }
+  .player-name-cell { font-weight: 600; font-size: 15px; }
+  .amount-cell { font-family: 'Bebas Neue', sans-serif; font-size: 20px; }
+  .amount-pos { color: var(--green); }
+  .amount-neg { color: #c62828; }
+  .amount-zero { color: var(--muted); }
+
+  .hole-history {
+    background: white;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .history-header {
+    background: var(--brown);
+    color: white;
+    padding: 12px 16px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .history-row {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f0f0f0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .history-row:last-child { border-bottom: none; }
+  .h-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    color: var(--green);
+    width: 28px;
+    flex-shrink: 0;
+  }
+  .h-details { flex: 1; }
+  .h-wolf { font-size: 12px; color: var(--muted); }
+  .h-teams { font-size: 13px; font-weight: 500; margin-top: 2px; }
+  .h-result {
+    font-weight: 700;
+    font-size: 13px;
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+  .h-result.wolf-wins { background: #e8f5e3; color: var(--green); }
+  .h-result.team-wins { background: #e3f2fd; color: #1565c0; }
+  .h-result.push { background: #eceff1; color: #607d8b; }
+  .h-money { font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--gold); margin-left: 8px; }
+
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 480px;
+    background: white;
+    border-top: 1px solid #eee;
+    display: flex;
+    z-index: 100;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.08);
+  }
+  .nav-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 8px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    transition: color 0.2s;
+  }
+  .nav-tab .tab-icon { font-size: 22px; margin-bottom: 2px; }
+  .nav-tab.active { color: var(--green); }
+
+  .mt-12 { margin-top: 12px; }
+  .mt-16 { margin-top: 16px; }
+  .divider { height: 1px; background: #f0f0f0; margin: 16px 0; }
+  .text-center { text-align: center; }
+  .empty-state { text-align: center; padding: 40px 20px; color: var(--muted); }
+  .empty-icon { font-size: 48px; margin-bottom: 12px; }
+
+  /* Toast notification */
+  .toast {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--green);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 30px;
+    font-size: 14px;
+    font-weight: 600;
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 200;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .page.active { animation: fadeIn 0.25s ease; }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-title">🐺 WOLF</div>
+    <div class="header-sub">Golf Money Tracker</div>
+    <div class="header-actions">
+      <button class="btn-icon" onclick="showPage('setup')" title="Settings">⚙️</button>
+    </div>
+  </div>
+
+  <!-- SETUP PAGE -->
+  <div id="page-setup" class="page active">
+    <div class="setup-card">
+      <div class="section-label">👥 Players (2–6)</div>
+      <div id="player-inputs">
+        <div class="player-row">
+          <div class="player-num">1</div>
+          <input type="text" class="player-name" placeholder="Player 1 name" value="">
+        </div>
+        <div class="player-row">
+          <div class="player-num">2</div>
+          <input type="text" class="player-name" placeholder="Player 2 name" value="">
+        </div>
+        <div class="player-row">
+          <div class="player-num">3</div>
+          <input type="text" class="player-name" placeholder="Player 3 name" value="">
+        </div>
+        <div class="player-row">
+          <div class="player-num">4</div>
+          <input type="text" class="player-name" placeholder="Player 4 name" value="">
+        </div>
+      </div>
+      <button class="btn btn-secondary mt-12" onclick="addPlayer()">+ Add Player</button>
+    </div>
+
+    <div class="setup-card">
+      <div class="section-label">💰 Wager Per Hole</div>
+      <div class="amount-row">
+        <div class="dollar-prefix">$</div>
+        <input type="number" id="wager-input" placeholder="5" min="1" step="1" style="max-width:120px;">
+        <span style="color:var(--muted);font-size:14px;">per hole</span>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-top:10px;">Lone wolf wins/loses double this amount.</p>
+    </div>
+
+    <div class="setup-card">
+      <div class="section-label">🏌️ Wolf Rotation</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Wolf rotates each hole in player order.</p>
+      <div id="wolf-order" style="display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+
+    <div class="setup-card" id="ghost-card" style="display:none;">
+      <div class="section-label">👻 Ghost Player</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">With only 3 players, enable a ghost to play as the 4th slot. The ghost's winnings/losses are split equally among the 3 real players.</p>
+      <label style="display:flex;align-items:center;gap:12px;cursor:pointer;">
+        <input type="checkbox" id="ghost-check" style="width:20px;height:20px;accent-color:var(--green);">
+        <span style="font-weight:600;font-size:15px;" id="ghost-label">Ghost Player: Off</span>
+      </label>
+      <div id="ghost-name-wrap" style="display:none;margin-top:12px;">
+        <input type="text" id="ghost-name-input" placeholder="Ghost name (e.g. Billy Bogey)" style="width:100%;">
+      </div>
+    </div>
+
+    <div class="setup-card" id="greenies-card">
+      <div class="section-label">🏆 Greenies</div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Award a greenie to the player closest to the pin on par 3s. Winner collects the greenie amount from every other player.</p>
+      <label style="display:flex;align-items:center;gap:12px;cursor:pointer;">
+        <input type="checkbox" id="greenies-check" onchange="toggleGreeniesCheck()" style="width:20px;height:20px;accent-color:var(--green);">
+        <span style="font-weight:600;font-size:15px;" id="greenies-label">Greenies: Off</span>
+      </label>
+      <div id="greenies-holes-wrap" style="display:none;margin-top:16px;">
+        <div class="amount-row" style="margin-bottom:16px;">
+          <div class="dollar-prefix">$</div>
+          <input type="number" id="greenie-wager-input" placeholder="2" min="1" step="1" style="max-width:120px;" oninput="updateGreenieNote()">
+          <span style="color:var(--muted);font-size:14px;">per greenie</span>
+        </div>
+        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px;">Which holes are Par 3s?</div>
+        <div class="par3-grid" id="par3-grid"></div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="startRound()">Start Round →</button>
+  </div>
+
+  <!-- SCORECARD PAGE -->
+  <div id="page-scorecard" class="page">
+    <div class="hole-dots" id="hole-dots"></div>
+
+    <div class="setup-card">
+      <div class="hole-nav">
+        <button class="nav-btn" id="prev-btn" onclick="prevHole()">←</button>
+        <div class="text-center">
+          <div class="hole-indicator">HOLE <span id="hole-num-display">1</span></div>
+        </div>
+        <button class="nav-btn" id="next-btn" onclick="nextHole()">→</button>
+      </div>
+
+      <div class="wolf-select-row">
+        <div class="wolf-icon">🐺</div>
+        <div>
+          <div class="wolf-select-label">WOLF THIS HOLE</div>
+          <div class="wolf-name" id="wolf-display">—</div>
+        </div>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+        <span style="font-size:13px;color:var(--muted);font-weight:500;">Lone Wolf?</span>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+          <input type="checkbox" id="lone-wolf-check" onchange="toggleLoneWolf()" style="width:18px;height:18px;accent-color:var(--green);">
+          <span style="font-size:13px;font-weight:600;color:#e65100;" id="lone-wolf-label">Off</span>
+        </label>
+      </div>
+
+      <div id="team-section">
+        <div class="team-label">Wolf's Team (select partners)</div>
+        <div class="player-chips" id="partner-chips"></div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="team-label" style="margin-bottom:8px;">Result</div>
+      <div class="winner-row">
+        <button class="winner-btn" id="btn-wolf-wins" onclick="setWinner('wolf')">🐺 Wolf Wins</button>
+        <button class="winner-btn" id="btn-team-wins" onclick="setWinner('team')">🤝 Team Wins</button>
+        <button class="winner-btn" id="btn-push" onclick="setWinner('push')">↔ Push</button>
+      </div>
+
+      <div class="money-row">
+        <div class="money-icon">💵</div>
+        <div class="money-label">Base amount per player</div>
+        <div class="money-input-wrap">
+          <span>$</span>
+          <input type="number" id="hole-money" placeholder="5" min="0" step="1" oninput="updatePayoutNote()">
+        </div>
+      </div>
+      <div id="lone-wolf-payout-note" style="display:none;background:#fff3e0;border:1.5px solid #e65100;border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#bf360c;font-weight:600;line-height:1.5;">
+        🐺 Lone Wolf is in for 2× — wins or loses $<span id="lw-2x">0</span><br>
+        <span style="font-weight:500;color:#e65100;">Each opponent wins/loses $<span id="lw-1x">0</span></span>
+      </div>
+      <div id="ghost-payout-note" style="display:none;background:#f3e5f5;border:1.5px solid #9c27b0;border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#6a1b9a;font-weight:600;line-height:1.5;">
+        👻 Ghost's net is split equally among the 3 real players
+      </div>
+
+      <div class="divider"></div>
+      <div class="team-label" style="margin-bottom:8px;">🐦 Birdie — doubles the hole</div>
+      <div class="player-chips" id="birdie-chips" style="margin-bottom:16px;"></div>
+      <div id="birdie-active-note" style="display:none;background:#e8f5e3;border:1.5px solid var(--green);border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:var(--green);font-weight:600;">
+        🐦 Birdie! Hole amount doubled → $<span id="birdie-doubled-amt">0</span>
+      </div>
+
+      <div class="team-label" style="margin-bottom:8px;">🦅 Eagle — triples the hole</div>
+      <div class="player-chips" id="eagle-chips" style="margin-bottom:16px;"></div>
+      <div id="eagle-active-note" style="display:none;background:#fff3e0;border:1.5px solid #e65100;border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#bf360c;font-weight:600;">
+        🦅 Eagle! Hole amount tripled → $<span id="eagle-tripled-amt">0</span>
+      </div>
+
+      <div id="greenie-section" style="display:none;">
+        <div class="divider"></div>
+        <div class="greenie-section">
+          <div class="greenie-label">🏆 Par 3 — Who's closest to the pin?</div>
+          <div class="player-chips" id="greenie-chips"></div>
+          <div id="greenie-note" style="display:none;margin-top:10px;font-size:12px;color:#8b6914;font-weight:600;">
+            🏆 <span id="greenie-winner-name"></span> wins the greenie — collects $<span id="greenie-amt"></span> from each player
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" onclick="saveHole()">Save Hole ✓</button>
+    </div>
+  </div>
+
+  <!-- SCOREBOARD PAGE -->
+  <div id="page-scoreboard" class="page">
+    <div class="score-table" id="scoreboard-table">
+      <div class="empty-state">
+        <div class="empty-icon">📊</div>
+        <p>No holes played yet.</p>
+      </div>
+    </div>
+
+    <div class="hole-history" id="hole-history">
+      <div class="history-header">Hole Log</div>
+      <div class="empty-state">
+        <p style="padding:20px;font-size:13px;">Holes will appear here after saving.</p>
+      </div>
+    </div>
+
+    <button class="btn btn-secondary" onclick="resetRound()">🔄 New Round</button>
+  </div>
+</div>
+
+<!-- Bottom Nav -->
+<div class="bottom-nav">
+  <button class="nav-tab active" id="nav-setup" onclick="showPage('setup')">
+    <span class="tab-icon">⚙️</span> Setup
+  </button>
+  <button class="nav-tab" id="nav-scorecard" onclick="showPage('scorecard')">
+    <span class="tab-icon">🏌️</span> Scorecard
+  </button>
+  <button class="nav-tab" id="nav-scoreboard" onclick="showPage('scoreboard')">
+    <span class="tab-icon">🏆</span> Scores
+  </button>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── State ──
+let state = {
+  players: [],
+  wager: 5,
+  wolfOrder: [],
+  currentHole: 1,
+  holes: {},
+  ghostEnabled: false,
+  ghostName: 'Ghost',
+  greeniesEnabled: false,
+  par3Holes: [],
+  greenieWager: 2,
+};
+
+const STORAGE_KEY = 'wolf-tracker-state-v2';
+
+// ── Storage ──
+// Works in both Claude (window.storage) and real browsers (localStorage)
+function loadState() {
+  try {
+    const s = localStorage.getItem(STORAGE_KEY);
+    if (s) state = { ...state, ...JSON.parse(s) };
+  } catch (e) {}
+}
+
+async function loadStateAsync() {
+  loadState(); // try localStorage first
+  if (typeof window.storage !== 'undefined') {
+    try {
+      const result = await window.storage.get(STORAGE_KEY);
+      if (result && result.value) state = { ...state, ...JSON.parse(result.value) };
+    } catch (e) {}
+  }
+}
+
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+  if (typeof window.storage !== 'undefined') {
+    try { window.storage.set(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+  }
+}
+
+// ── Toast ──
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ── Pages ──
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('nav-' + name).classList.add('active');
+  if (name === 'scorecard') renderScorecard();
+  if (name === 'scoreboard') renderScoreboard();
+  if (name === 'setup') { renderWolfOrder(); updateGhostCard(); }
+}
+
+// ── Setup ──
+function addPlayer() {
+  const inputs = document.querySelectorAll('.player-name');
+  if (inputs.length >= 6) { showToast('Max 6 players'); return; }
+  const wrap = document.getElementById('player-inputs');
+  const n = inputs.length + 1;
+  const row = document.createElement('div');
+  row.className = 'player-row';
+  row.innerHTML = `<div class="player-num">${n}</div><input type="text" class="player-name" placeholder="Player ${n} name">`;
+  wrap.appendChild(row);
+  row.querySelector('input').addEventListener('input', () => { renderWolfOrder(); updateGhostCard(); });
+  renderWolfOrder();
+  updateGhostCard();
+}
+
+function getPlayerNames() {
+  return Array.from(document.querySelectorAll('.player-name'))
+    .map(i => i.value.trim())
+    .filter(n => n.length > 0);
+}
+
+function updateGhostCard() {
+  const names = getPlayerNames();
+  const card = document.getElementById('ghost-card');
+  card.style.display = names.length === 3 ? 'block' : 'none';
+  if (names.length !== 3) {
+    // disable ghost if player count changes away from 3
+    document.getElementById('ghost-check').checked = false;
+    document.getElementById('ghost-name-wrap').style.display = 'none';
+    document.getElementById('ghost-label').textContent = 'Ghost Player: Off';
+  }
+}
+
+function toggleGhostCheck() {
+  const on = document.getElementById('ghost-check').checked;
+  document.getElementById('ghost-label').textContent = on ? 'Ghost Player: ON 👻' : 'Ghost Player: Off';
+  document.getElementById('ghost-name-wrap').style.display = on ? 'block' : 'none';
+}
+
+function toggleGreeniesCheck() {
+  const on = document.getElementById('greenies-check').checked;
+  document.getElementById('greenies-label').textContent = on ? 'Greenies: ON 🏆' : 'Greenies: Off';
+  document.getElementById('greenies-holes-wrap').style.display = on ? 'block' : 'none';
+  if (on) renderPar3Grid();
+}
+
+function renderPar3Grid() {
+  const grid = document.getElementById('par3-grid');
+  grid.innerHTML = '';
+  for (let i = 1; i <= 18; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'par3-btn' + (state.par3Holes.includes(i) ? ' selected' : '');
+    btn.textContent = i;
+    btn.onclick = () => togglePar3(i, btn);
+    grid.appendChild(btn);
+  }
+}
+
+function togglePar3(hole, btn) {
+  const idx = state.par3Holes.indexOf(hole);
+  if (idx > -1) { state.par3Holes.splice(idx, 1); btn.classList.remove('selected'); }
+  else { state.par3Holes.push(hole); btn.classList.add('selected'); }
+}
+
+function renderWolfOrder() {
+  const names = getPlayerNames();
+  const container = document.getElementById('wolf-order');
+  container.innerHTML = '';
+  names.forEach((name, i) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f5f5f5;border-radius:10px;';
+    row.innerHTML = `<span style="font-size:18px;">🐺</span><span style="font-weight:600;font-size:14px;color:var(--muted);">Hole ${i+1}, ${i+1+names.length}...</span><span style="color:var(--green);font-weight:700;margin-left:auto;">${name}</span>`;
+    container.appendChild(row);
+  });
+}
+
+function startRound() {
+  const players = getPlayerNames();
+  if (players.length < 2) { showToast('Enter at least 2 player names'); return; }
+  const wager = parseFloat(document.getElementById('wager-input').value) || 5;
+  const ghostOn = document.getElementById('ghost-check').checked && players.length === 3;
+  const ghostName = (document.getElementById('ghost-name-input').value.trim() || 'Ghost');
+
+  state.players = players;
+  state.wager = wager;
+  state.wolfOrder = [...players];
+  state.currentHole = 1;
+  state.holes = {};
+  state.ghostEnabled = ghostOn;
+  state.ghostName = ghostName;
+  state.greeniesEnabled = document.getElementById('greenies-check').checked;
+  state.greenieWager = parseFloat(document.getElementById('greenie-wager-input').value) || 2;
+  saveState();
+  showPage('scorecard');
+}
+
+// ── Scorecard ──
+// Wolf rotation is always real players only; ghost is never the wolf
+function getAllRotationPlayers() {
+  return state.players;
+}
+
+function getWolfForHole(hole) {
+  const all = getAllRotationPlayers();
+  if (!all.length) return '—';
+  return all[(hole - 1) % all.length];
+}
+
+function isGhost(name) {
+  return state.ghostEnabled && name === state.ghostName;
+}
+
+function updatePayoutNote() {
+  const hData = state.holes[state.currentHole] || {};
+  const lw = hData.loneWolf || false;
+  const hasBirdie = (hData.birdies || []).length > 0;
+  const hasEagle  = (hData.eagles  || []).length > 0;
+  const baseMoney = parseFloat(document.getElementById('hole-money').value) || state.wager;
+
+  // Lone wolf ×2; eagle ×3 (overrides birdie); birdie ×2
+  let effectiveMoney = baseMoney;
+  if (lw) effectiveMoney *= 2;
+  if (hasEagle) effectiveMoney *= 3;
+  else if (hasBirdie) effectiveMoney *= 2;
+
+  const lwNote     = document.getElementById('lone-wolf-payout-note');
+  const ghostNote  = document.getElementById('ghost-payout-note');
+  const birdieNote = document.getElementById('birdie-active-note');
+  const eagleNote  = document.getElementById('eagle-active-note');
+
+  if (lw) {
+    lwNote.style.display = 'block';
+    const numOpponents = state.players.length - 1 + (state.ghostEnabled ? 1 : 0);
+    document.getElementById('lw-2x').textContent = (effectiveMoney * numOpponents).toFixed(0);
+    document.getElementById('lw-1x').textContent = effectiveMoney.toFixed(0);
+  } else {
+    lwNote.style.display = 'none';
+  }
+
+  ghostNote.style.display = state.ghostEnabled ? 'block' : 'none';
+
+  if (hasEagle) {
+    eagleNote.style.display = 'block';
+    document.getElementById('eagle-tripled-amt').textContent = effectiveMoney.toFixed(0);
+    birdieNote.style.display = 'none';
+  } else if (hasBirdie) {
+    birdieNote.style.display = 'block';
+    document.getElementById('birdie-doubled-amt').textContent = effectiveMoney.toFixed(0);
+    eagleNote.style.display = 'none';
+  } else {
+    birdieNote.style.display = 'none';
+    eagleNote.style.display = 'none';
+  }
+}
+
+function renderScorecard() {
+  if (!state.players.length) {
+    showToast('Set up players first');
+    showPage('setup');
+    return;
+  }
+  const hole = state.currentHole;
+  const hData = state.holes[hole] || {};
+  const wolfName = getWolfForHole(hole);
+  const wolfIsGhost = isGhost(wolfName);
+
+  document.getElementById('hole-num-display').innerHTML = `${hole}<span>of 18</span>`;
+  document.getElementById('wolf-display').textContent = wolfIsGhost ? `${wolfName} 👻` : wolfName;
+  document.getElementById('prev-btn').disabled = hole <= 1;
+  document.getElementById('next-btn').disabled = hole >= 18;
+
+  const lw = hData.loneWolf || false;
+  document.getElementById('lone-wolf-check').checked = lw;
+  document.getElementById('lone-wolf-label').textContent = lw ? 'ON' : 'Off';
+  // Can't go lone wolf if wolf is the ghost
+  document.getElementById('lone-wolf-check').disabled = wolfIsGhost;
+  document.getElementById('team-section').style.display = lw ? 'none' : 'block';
+
+  // Partner chips — show real players (not wolf) + ghost if applicable
+  const allPlayers = getAllRotationPlayers();
+  const chipsContainer = document.getElementById('partner-chips');
+  chipsContainer.innerHTML = '';
+
+  // If wolf is ghost, all real players are opponents (no partner selection needed — show info)
+  if (wolfIsGhost) {
+    const note = document.createElement('div');
+    note.className = 'ghost-badge';
+    note.innerHTML = '👻 Ghost is the Wolf — all real players are opponents';
+    chipsContainer.appendChild(note);
+  } else {
+    allPlayers.forEach(p => {
+      if (p === wolfName) return;
+      const chip = document.createElement('div');
+      chip.className = 'chip';
+      if (isGhost(p)) {
+        chip.classList.add('ghost');
+        chip.innerHTML = `👻 ${p}`;
+      } else {
+        chip.textContent = p;
+      }
+      const isPartner = hData.partners && hData.partners.includes(p);
+      if (isPartner) chip.classList.add('team');
+      chip.onclick = () => togglePartner(p, chip);
+      chipsContainer.appendChild(chip);
+    });
+  }
+
+  document.getElementById('btn-wolf-wins').className = 'winner-btn' + (hData.winner === 'wolf' ? ' wolf-wins' : '');
+  document.getElementById('btn-team-wins').className = 'winner-btn' + (hData.winner === 'team' ? ' team-wins' : '');
+  document.getElementById('btn-push').className = 'winner-btn' + (hData.winner === 'push' ? ' push' : '');
+
+  document.getElementById('hole-money').value = hData.money !== undefined ? hData.money : state.wager;
+
+  // Birdie chips
+  const birdieContainer = document.getElementById('birdie-chips');
+  birdieContainer.innerHTML = '';
+  const currentBirdies = hData.birdies || [];
+  state.players.forEach(p => {
+    const chip = document.createElement('div');
+    chip.className = 'chip';
+    chip.textContent = '🐦 ' + p;
+    if (currentBirdies.includes(p)) chip.classList.add('team');
+    chip.onclick = () => toggleBirdie(p, chip);
+    birdieContainer.appendChild(chip);
+  });
+
+  // Eagle chips
+  const eagleContainer = document.getElementById('eagle-chips');
+  eagleContainer.innerHTML = '';
+  const currentEagles = hData.eagles || [];
+  state.players.forEach(p => {
+    const chip = document.createElement('div');
+    chip.className = 'chip';
+    chip.textContent = '🦅 ' + p;
+    if (currentEagles.includes(p)) chip.classList.add('wolf-wins');
+    chip.onclick = () => toggleEagle(p, chip);
+    eagleContainer.appendChild(chip);
+  });
+
+  // Greenie section — show only on par 3 holes
+  const greenieSection = document.getElementById('greenie-section');
+  const isPar3 = state.greeniesEnabled && state.par3Holes.includes(hole);
+  greenieSection.style.display = isPar3 ? 'block' : 'none';
+  if (isPar3) {
+    const greenieChips = document.getElementById('greenie-chips');
+    greenieChips.innerHTML = '';
+    const currentGreenie = hData.greenie || null;
+    state.players.forEach(p => {
+      const chip = document.createElement('div');
+      chip.className = 'chip' + (currentGreenie === p ? ' greenie-winner' : '');
+      chip.textContent = '🏆 ' + p;
+      chip.onclick = () => selectGreenie(p);
+      greenieChips.appendChild(chip);
+    });
+    const noneChip = document.createElement('div');
+    noneChip.className = 'chip' + (currentGreenie === null && hData.hasOwnProperty('greenie') ? ' greenie-winner' : '');
+    noneChip.textContent = '❌ No Greenie';
+    noneChip.onclick = () => selectGreenie(null);
+    greenieChips.appendChild(noneChip);
+    updateGreenieNote();
+  }
+
+  updatePayoutNote();
+  renderDots();
+}
+
+function renderDots() {
+  const container = document.getElementById('hole-dots');
+  container.innerHTML = '';
+  for (let i = 1; i <= 18; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'hole-dot';
+    dot.textContent = i;
+    const h = state.holes[i];
+    if (i === state.currentHole) dot.classList.add('current');
+    else if (h) {
+      if (h.winner === 'wolf') dot.classList.add('wolf-won');
+      else if (h.winner === 'team') dot.classList.add('team-won');
+      else if (h.winner === 'push') dot.classList.add('pushed');
+    }
+    dot.onclick = () => { state.currentHole = i; renderScorecard(); };
+    container.appendChild(dot);
+  }
+}
+
+function togglePartner(name, chip) {
+  const hole = state.currentHole;
+  if (!state.holes[hole]) state.holes[hole] = { partners: [] };
+  if (!state.holes[hole].partners) state.holes[hole].partners = [];
+  const idx = state.holes[hole].partners.indexOf(name);
+  if (idx > -1) { state.holes[hole].partners.splice(idx, 1); chip.classList.remove('team'); }
+  else { state.holes[hole].partners.push(name); chip.classList.add('team'); }
+}
+
+function toggleBirdie(name, chip) {
+  const hole = state.currentHole;
+  if (!state.holes[hole]) state.holes[hole] = {};
+  if (!state.holes[hole].birdies) state.holes[hole].birdies = [];
+  const idx = state.holes[hole].birdies.indexOf(name);
+  if (idx > -1) { state.holes[hole].birdies.splice(idx, 1); chip.classList.remove('team'); }
+  else { state.holes[hole].birdies.push(name); chip.classList.add('team'); }
+  updatePayoutNote();
+}
+
+function toggleEagle(name, chip) {
+  const hole = state.currentHole;
+  if (!state.holes[hole]) state.holes[hole] = {};
+  if (!state.holes[hole].eagles) state.holes[hole].eagles = [];
+  const idx = state.holes[hole].eagles.indexOf(name);
+  if (idx > -1) {
+    state.holes[hole].eagles.splice(idx, 1);
+    chip.classList.remove('wolf-wins');
+  } else {
+    state.holes[hole].eagles.push(name);
+    chip.classList.add('wolf-wins');
+    // Eagle supersedes birdie — remove player from birdies if set
+    if (state.holes[hole].birdies) {
+      const bi = state.holes[hole].birdies.indexOf(name);
+      if (bi > -1) {
+        state.holes[hole].birdies.splice(bi, 1);
+        const pi = state.players.indexOf(name);
+        const bChips = document.querySelectorAll('#birdie-chips .chip');
+        if (bChips[pi]) bChips[pi].classList.remove('team');
+      }
+    }
+  }
+  updatePayoutNote();
+}
+
+function selectGreenie(name) {
+  const hole = state.currentHole;
+  if (!state.holes[hole]) state.holes[hole] = {};
+  state.holes[hole].greenie = name; // null = no greenie
+  // Refresh chip highlights
+  const chips = document.querySelectorAll('#greenie-chips .chip');
+  chips.forEach((c, i) => {
+    c.classList.remove('greenie-winner');
+    if (name === null && i === chips.length - 1) c.classList.add('greenie-winner');
+    else if (name !== null && state.players[i] === name) c.classList.add('greenie-winner');
+  });
+  updateGreenieNote();
+}
+
+function updateGreenieNote() {
+  const hole = state.currentHole;
+  const hData = state.holes[hole] || {};
+  const winner = hData.greenie || null;
+  const note = document.getElementById('greenie-note');
+  if (winner) {
+    note.style.display = 'block';
+    document.getElementById('greenie-winner-name').textContent = winner;
+    document.getElementById('greenie-amt').textContent = (state.greenieWager || 2).toFixed(0);
+  } else {
+    note.style.display = 'none';
+  }
+}
+
+function toggleLoneWolf() {
+  const hole = state.currentHole;
+  if (!state.holes[hole]) state.holes[hole] = {};
+  state.holes[hole].loneWolf = document.getElementById('lone-wolf-check').checked;
+  document.getElementById('lone-wolf-label').textContent = state.holes[hole].loneWolf ? 'ON' : 'Off';
+  document.getElementById('team-section').style.display = state.holes[hole].loneWolf ? 'none' : 'block';
+  updatePayoutNote();
+}
+
+function setWinner(w) {
+  const hole = state.currentHole;
+  if (!state.holes[hole]) state.holes[hole] = {};
+  state.holes[hole].winner = w;
+  document.getElementById('btn-wolf-wins').className = 'winner-btn' + (w === 'wolf' ? ' wolf-wins' : '');
+  document.getElementById('btn-team-wins').className = 'winner-btn' + (w === 'team' ? ' team-wins' : '');
+  document.getElementById('btn-push').className = 'winner-btn' + (w === 'push' ? ' push' : '');
+}
+
+function saveHole() {
+  const hole = state.currentHole;
+  if (!state.holes[hole]) state.holes[hole] = {};
+  if (!state.holes[hole].winner) { showToast('Select a result first'); return; }
+  const money = parseFloat(document.getElementById('hole-money').value) || state.wager;
+  state.holes[hole].money = money;
+  state.holes[hole].wolf = getWolfForHole(hole);
+  if (!state.holes[hole].partners) state.holes[hole].partners = [];
+  if (!state.holes[hole].birdies) state.holes[hole].birdies = [];
+  if (!state.holes[hole].eagles) state.holes[hole].eagles = [];
+  saveState();
+  renderDots();
+  showToast(`Hole ${hole} saved! ✓`);
+  if (hole < 18) {
+    setTimeout(() => { state.currentHole = hole + 1; renderScorecard(); }, 600);
+  }
+}
+
+function prevHole() { if (state.currentHole > 1) { state.currentHole--; renderScorecard(); } }
+function nextHole() { if (state.currentHole < 18) { state.currentHole++; renderScorecard(); } }
+
+// ── Payout math ──
+//
+// FLAT per-hole model — always zero-sum:
+//
+// Normal hole (always 2v2, wolf picks one partner):
+//   Each winner +$X, each loser -$X. Nets $0.
+//
+// Lone Wolf (1v3) — hole amount AUTO-DOUBLES:
+//   effectiveAmount = base * 2 (then * 2 again if birdie)
+//   Wolf wins → collects effectiveAmount from EACH opponent
+//   Wolf loses → pays effectiveAmount to EACH opponent
+//   Nets $0: wolf +(ea*3) or -(ea*3), each opp -(ea) or +(ea)
+//
+// Birdie — doubles the effective amount:
+//   Normal + birdie: base * 2
+//   Lone Wolf + birdie: base * 2 (lone wolf) * 2 (birdie) = base * 4
+//
+// Ghost: occupies a team slot (affects who is on which side) but
+//   is excluded from money settlement. Real players only win/lose
+//   the flat per-person amount. Still nets $0 among real players.
+
+function computeTotals() {
+  const players = state.players;
+  const ghost = state.ghostEnabled ? state.ghostName : null;
+  const allParticipants = ghost ? [...players, ghost] : [...players];
+
+  const totals = {};
+  players.forEach(p => totals[p] = 0);
+
+  Object.keys(state.holes).forEach(hNum => {
+    const h = state.holes[hNum];
+    if (!h.winner || h.winner === 'push') return;
+
+    const baseMoney = h.money || state.wager;
+    const loneWolf = h.loneWolf || false;
+    const hasBirdie = (h.birdies || []).length > 0;
+
+    // Lone wolf ×2; eagle ×3 overrides birdie ×2
+    const hasEagle = (h.eagles || []).length > 0;
+    let effectiveMoney = baseMoney;
+    if (loneWolf) effectiveMoney *= 2;
+    if (hasEagle) effectiveMoney *= 3;
+    else if (hasBirdie) effectiveMoney *= 2;
+
+    const wolfName = h.wolf;
+    const partners = h.partners || [];
+    const wolfWon = h.winner === 'wolf';
+
+    // Build teams (ghost included for side assignment only)
+    let wolfTeam, oppTeam;
+    if (loneWolf) {
+      wolfTeam = [wolfName];
+      oppTeam = allParticipants.filter(p => p !== wolfName);
+    } else {
+      wolfTeam = [wolfName, ...partners];
+      oppTeam = allParticipants.filter(p => !wolfTeam.includes(p));
+    }
+
+    // Settle only between real players — flat effectiveMoney per person
+    const realWolf = wolfTeam.filter(p => players.includes(p));
+    const realOpp  = oppTeam.filter(p => players.includes(p));
+
+    if (loneWolf) {
+      // Lone wolf: wolf collects/pays effectiveMoney FROM/TO each opponent individually.
+      // Wolf wins → +effectiveMoney × numOpponents; each opponent -effectiveMoney. Sum = 0.
+      // Wolf loses → -effectiveMoney × numOpponents; each opponent +effectiveMoney. Sum = 0.
+      if (wolfWon) {
+        realWolf.forEach(p => { totals[p] += effectiveMoney * realOpp.length; });
+        realOpp.forEach(p  => { totals[p] -= effectiveMoney; });
+      } else {
+        realWolf.forEach(p => { totals[p] -= effectiveMoney * realOpp.length; });
+        realOpp.forEach(p  => { totals[p] += effectiveMoney; });
+      }
+    } else {
+      // Pot model: every player is in for effectiveMoney.
+      // Losing side each pay effectiveMoney into the pot.
+      // Pot is split evenly among winners. Always nets $0.
+      const winners = wolfWon ? realWolf : realOpp;
+      const losers  = wolfWon ? realOpp  : realWolf;
+      const pot = losers.length * effectiveMoney;
+      const winnerShare = pot / winners.length;
+      winners.forEach(p => { totals[p] += winnerShare; });
+      losers.forEach(p  => { totals[p] -= effectiveMoney; });
+    }
+  });
+
+  // ── Greenie payouts ──
+  // Winner collects base wager from each other real player (separate from wolf game)
+  if (state.greeniesEnabled) {
+    Object.keys(state.holes).forEach(hNum => {
+      const h = state.holes[hNum];
+      const holeNum = parseInt(hNum);
+      if (!h.greenie || !state.par3Holes.includes(holeNum)) return;
+      const winner = h.greenie;
+      if (!players.includes(winner)) return;
+      const amt = state.greenieWager || 2;
+      players.forEach(p => {
+        if (p === winner) totals[p] += amt * (players.length - 1);
+        else totals[p] -= amt;
+      });
+    });
+  }
+
+  return totals;
+}
+
+// ── Scoreboard ──
+function renderScoreboard() {
+  const players = state.players;
+  if (!players.length) return;
+
+  const totals = computeTotals();
+  const sorted = [...players].sort((a, b) => totals[b] - totals[a]);
+
+  const table = document.getElementById('scoreboard-table');
+  table.innerHTML = `
+    <div class="score-header" style="grid-template-columns:30px 1fr 80px;">
+      <span>#</span><span>Player</span><span style="text-align:right;">Net</span>
+    </div>
+  `;
+  sorted.forEach((p, i) => {
+    const net = totals[p];
+    const cls = net > 0 ? 'amount-pos' : net < 0 ? 'amount-neg' : 'amount-zero';
+    const sign = net > 0 ? '+' : '';
+    const row = document.createElement('div');
+    row.className = 'score-row';
+    row.style.gridTemplateColumns = '30px 1fr 80px';
+    row.innerHTML = `
+      <span class="player-rank">${i + 1}</span>
+      <span class="player-name-cell">${p}</span>
+      <span class="amount-cell ${cls}" style="text-align:right;">${sign}$${Math.abs(net).toFixed(2)}</span>
+    `;
+    table.appendChild(row);
+  });
+
+  const hist = document.getElementById('hole-history');
+  const rows = Object.keys(state.holes).filter(h => state.holes[h].wolf).sort((a, b) => +a - +b);
+  if (!rows.length) {
+    hist.innerHTML = '<div class="history-header">Hole Log</div><div style="padding:20px;text-align:center;color:var(--muted);font-size:13px;">No holes saved yet.</div>';
+    return;
+  }
+  hist.innerHTML = '<div class="history-header">Hole Log</div>';
+  rows.forEach(hNum => {
+    const h = state.holes[hNum];
+    const allRot = getAllRotationPlayers();
+    const wolfTeam = h.loneWolf ? [h.wolf] : [h.wolf, ...(h.partners || [])];
+    const others = allRot.filter(p => !wolfTeam.includes(p));
+    const resClass = h.winner === 'wolf' ? 'wolf-wins' : h.winner === 'team' ? 'team-wins' : 'push';
+    const resLabel = h.winner === 'wolf' ? '🐺 Wolf' : h.winner === 'team' ? '🤝 Team' : '↔ Push';
+    const wolfDisplay = wolfTeam.map(n => isGhost(n) ? `👻${n}` : n).join(', ');
+    const oppDisplay = others.map(n => isGhost(n) ? `👻${n}` : n).join(', ');
+    const loneTag = h.loneWolf ? ' <span style="background:#fff3e0;color:#e65100;padding:2px 6px;border-radius:8px;font-size:10px;">LONE 2×</span>' : '';
+    const birdieTag = (h.birdies && h.birdies.length > 0) ? ' <span style="background:#e8f5e3;color:var(--green);padding:2px 6px;border-radius:8px;font-size:10px;">🐦 2×</span>' : '';
+    const eagleTag  = (h.eagles  && h.eagles.length  > 0) ? ' <span style="background:#fff3e0;color:#e65100;padding:2px 6px;border-radius:8px;font-size:10px;">🦅 3×</span>' : '';
+    const greenieTag = h.greenie ? ' <span style="background:#fff8e1;color:#8b6914;padding:2px 6px;border-radius:8px;font-size:10px;">🏆 ' + h.greenie + '</span>' : '';
+    const row = document.createElement('div');
+    row.className = 'history-row';
+    row.innerHTML = `
+      <div class="h-num">${hNum}</div>
+      <div class="h-details">
+        <div class="h-wolf">Wolf: <strong>${isGhost(h.wolf) ? '👻 ' + h.wolf : h.wolf}</strong>${loneTag}${h.eagles && h.eagles.length > 0 ? eagleTag : birdieTag}${greenieTag}${(h.eagles && h.eagles.length > 0) ? ' <span style=\"font-size:11px;color:var(--muted)\">(eagle: '+h.eagles.join(', ')+')</span>' : (h.birdies && h.birdies.length > 0) ? ' <span style=\"font-size:11px;color:var(--muted)\">(birdie: '+h.birdies.join(', ')+')</span>' : ''}</div>
+        <div class="h-teams">${wolfDisplay} vs ${oppDisplay || 'all'}</div>
+      </div>
+      <div class="h-result ${resClass}">${resLabel}</div>
+      <div class="h-money">${h.eagles && h.eagles.length > 0 ? eagleTag : birdieTag}$${(h.eagles && h.eagles.length > 0) ? (h.money || state.wager)*3 : (h.birdies && h.birdies.length > 0) ? (h.money || state.wager)*2 : (h.money || state.wager)}</div>
+    `;
+    hist.appendChild(row);
+  });
+}
+
+function resetRound() {
+  if (!confirm('Start a new round? This will clear all hole data.')) return;
+  state.holes = {};
+  state.currentHole = 1;
+  saveState();
+  showPage('setup');
+}
+
+// ── Init ──
+async function init() {
+  await loadStateAsync();
+
+  if (state.players.length) {
+    while (document.querySelectorAll('.player-name').length < state.players.length) {
+      const wrap = document.getElementById('player-inputs');
+      const n = document.querySelectorAll('.player-name').length + 1;
+      const row = document.createElement('div');
+      row.className = 'player-row';
+      row.innerHTML = `<div class="player-num">${n}</div><input type="text" class="player-name" placeholder="Player ${n} name">`;
+      wrap.appendChild(row);
+    }
+    const allInputs = document.querySelectorAll('.player-name');
+    state.players.forEach((name, i) => { if (allInputs[i]) allInputs[i].value = name; });
+    if (document.getElementById('wager-input')) document.getElementById('wager-input').value = state.wager;
+    if (state.ghostEnabled) {
+      document.getElementById('ghost-check').checked = true;
+      document.getElementById('ghost-label').textContent = 'Ghost Player: ON 👻';
+      document.getElementById('ghost-name-wrap').style.display = 'block';
+      document.getElementById('ghost-name-input').value = state.ghostName || 'Ghost';
+    }
+    renderWolfOrder();
+    updateGhostCard();
+    if (state.greeniesEnabled) {
+      document.getElementById('greenies-check').checked = true;
+      document.getElementById('greenies-label').textContent = 'Greenies: ON 🏆';
+      document.getElementById('greenies-holes-wrap').style.display = 'block';
+      document.getElementById('greenie-wager-input').value = state.greenieWager || 2;
+      renderPar3Grid();
+    }
+  }
+}
+
+document.getElementById('player-inputs').addEventListener('input', () => { renderWolfOrder(); updateGhostCard(); });
+document.getElementById('ghost-check').addEventListener('change', toggleGhostCheck);
+
+init();
+</script>
+</body>
+</html>
